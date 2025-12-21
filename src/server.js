@@ -9,12 +9,17 @@ const app = express();
 const server = http.createServer(app);
 
 /* =========================
-   CORS (RENDER SAFE)
+   CORS (FINAL – ALLOW ALL FRONTENDS)
    ========================= */
 const allowedOrigins = [
   "http://localhost:5173",
+
+  // OLD + CURRENT VERCEL DOMAINS (KEEP ALL)
   "https://fleet-frontend-3f3g.vercel.app",
   "https://fleet-frontend-r8xl5mow1-girichandan125s-projects.vercel.app",
+  "https://fleet-frontend-7a4q.vercel.app",
+  "https://fleet-frontendd.vercel.app",
+  "https://fleet-frontend-8se3.vercel.app",
 ];
 
 const corsOptions = {
@@ -23,9 +28,9 @@ const corsOptions = {
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"));
     }
+
+    return callback(null, false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -34,7 +39,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// ✅ SAFE PREFLIGHT HANDLING (NO CRASH ON RENDER)
+/* 🔥 IMPORTANT: HANDLE PREFLIGHT SAFELY */
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") {
     return res.sendStatus(204);
