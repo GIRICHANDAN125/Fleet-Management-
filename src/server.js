@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 
 /* =========================
-   CORS (VERY IMPORTANT)
+   CORS (RENDER SAFE)
    ========================= */
 const allowedOrigins = [
   "http://localhost:5173",
@@ -17,25 +17,30 @@ const allowedOrigins = [
   "https://fleet-frontend-r8xl5mow1-girichandan125s-projects.vercel.app",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-// 🔥 THIS IS THE KEY FIX (preflight)
-app.options("*", cors());
+app.use(cors(corsOptions));
+
+// ✅ SAFE PREFLIGHT HANDLING (NO CRASH ON RENDER)
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 /* =========================
    BODY PARSER
@@ -48,7 +53,10 @@ app.use(express.json());
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB error:", err));
+  .catch((err) => {
+    console.error("MongoDB error:", err);
+    process.exit(1);
+  });
 
 /* =========================
    SOCKET.IO
