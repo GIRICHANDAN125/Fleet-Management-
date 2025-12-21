@@ -9,11 +9,23 @@ const app = express();
 const server = http.createServer(app);
 
 /* =========================
-   CORS (MUST BE FIRST)
+   CORS (VERY IMPORTANT)
    ========================= */
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://fleet-frontend-3f3g.vercel.app",
+  "https://fleet-frontend-r8xl5mow1-girichandan125s-projects.vercel.app",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -32,11 +44,11 @@ mongoose
   .catch((err) => console.error("MongoDB error:", err));
 
 /* =========================
-   SOCKET.IO (OPTIONAL)
+   SOCKET.IO
    ========================= */
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -63,7 +75,7 @@ app.use("/api/drivers", require("./routes/driver.routes"));
 app.use("/api/route", require("./routes/route.routes"));
 
 /* =========================
-   HEALTH CHECK (OPTIONAL)
+   HEALTH CHECK
    ========================= */
 app.get("/", (req, res) => {
   res.send("Fleet Management API is running");
