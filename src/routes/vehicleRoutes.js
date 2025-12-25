@@ -1,12 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/vehicleController");
 
-router.get("/", controller.getVehicles);
-router.post("/", controller.addVehicle);
+const {
+  getVehicles,
+  addVehicle,
+  markMaintenance,
+  markDelay,
+  updateVehicleStatus
+} = require("../controllers/vehicleController");
 
-router.patch("/:id/maintenance", controller.markMaintenance);
-router.patch("/:id/delay", controller.markDelay);
-router.put("/:id/status", controller.updateVehicleStatus);
+/* =========================
+   VEHICLE ROUTES
+   ========================= */
+router.get("/", getVehicles);
+router.post("/", addVehicle);
+
+router.patch("/:id/maintenance", markMaintenance);
+router.patch("/:id/delay", markDelay);
+router.patch("/:id/status", updateVehicleStatus);
 
 module.exports = router;

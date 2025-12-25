@@ -21,16 +21,7 @@ exports.getVehicles = async (req, res) => {
    ========================= */
 exports.addVehicle = async (req, res) => {
   try {
-    const { vehicleNumber, type, status, driver } = req.body;
-
-    const vehicle = await Vehicle.create({
-      vehicleNumber,
-      type,
-      status,
-      driver: driver || null,
-    });
-
-    await vehicle.populate("driver", "name phone");
+    const vehicle = await Vehicle.create(req.body);
     res.status(201).json(vehicle);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -38,78 +29,76 @@ exports.addVehicle = async (req, res) => {
 };
 
 /* =========================
-   🔧 MAINTENANCE UPDATE
+   MAINTENANCE
    ========================= */
 exports.markMaintenance = async (req, res) => {
+  console.log("✅ Maintenance API HIT", req.params.id, req.body);
+
   try {
-    const { issue } = req.body;
-    const vehicle = await Vehicle.findById(req.params.id);
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      { status: "Maintenance" },
+      { new: true }
+    );
 
     if (!vehicle) {
       return res.status(404).json({ message: "Vehicle not found" });
     }
-
-    vehicle.status = "Maintenance";
-    await vehicle.save();
 
     await Alert.create({
       type: "Maintenance",
-      title: `${vehicle.vehicleNumber} – ${issue}`,
-      severity: "warning",
-      resolved: false,
+      title: `${vehicle.vehicleNumber} - ${req.body.issue}`,
+      severity: "warning"
     });
-
-    res.json({ message: "Vehicle marked as maintenance" });
-  } catch (err) {
-    res.status(500).json({ message: "Maintenance update failed" });
-  }
-};
-
-/* =========================
-   🚨 DELAY UPDATE (FIXED)
-   ========================= */
-exports.markDelay = async (req, res) => {
-  try {
-    const { delayTime } = req.body;
-    const vehicle = await Vehicle.findById(req.params.id);
-
-    if (!vehicle) {
-      return res.status(404).json({ message: "Vehicle not found" });
-    }
-
-    vehicle.status = "Delayed";
-    await vehicle.save();
-
-    await Alert.create({
-      type: "Report",
-      title: `Delay Alert: ${vehicle.vehicleNumber} – ${delayTime}`,
-      severity: "critical",
-      resolved: false,
-    });
-
-    res.json({ message: "Vehicle delay updated" });
-  } catch (err) {
-    res.status(500).json({ message: "Delay update failed" });
-  }
-};
-
-/* =========================
-   GENERIC STATUS UPDATE
-   ========================= */
-exports.updateVehicleStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const vehicle = await Vehicle.findById(req.params.id);
-
-    if (!vehicle) {
-      return res.status(404).json({ message: "Vehicle not found" });
-    }
-
-    vehicle.status = status;
-    await vehicle.save();
 
     res.json(vehicle);
   } catch (err) {
-    res.status(500).json({ message: "Status update failed" });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* =========================
+   DELAY
+   ========================= */
+exports.markDelay = async (req, res) => {
+  console.log("✅ Delay API HIT", req.params.id, req.body);
+
+  try {
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      { status: "Delayed" },
+      { new: true }
+    );
+
+    if (!vehicle) {
+      return res.status(404).json({ message: "Vehicle not found" });
+    }
+
+    await Alert.create({
+      type: "Delay",
+      title: `${vehicle.vehicleNumber} - ${req.body.delayTime}`,
+      severity: "critical"
+    });
+
+    res.json(vehicle);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* =========================
+   GENERIC STATUS
+   ========================= */
+exports.updateVehicleStatus = async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+
+    res.json(vehicle);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
