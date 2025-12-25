@@ -12,7 +12,6 @@ exports.getVehicles = async (req, res) => {
 
     res.json(vehicles);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -31,12 +30,9 @@ exports.addVehicle = async (req, res) => {
       driver: driver || null,
     });
 
-    // populate driver before sending response
     await vehicle.populate("driver", "name phone");
-
     res.status(201).json(vehicle);
   } catch (err) {
-    console.error(err);
     res.status(400).json({ message: err.message });
   }
 };
@@ -53,27 +49,24 @@ exports.markMaintenance = async (req, res) => {
       return res.status(404).json({ message: "Vehicle not found" });
     }
 
-    // Update vehicle status
     vehicle.status = "Maintenance";
     await vehicle.save();
 
-    // Create maintenance alert
     await Alert.create({
       type: "Maintenance",
-      title: `${vehicle.type} ${vehicle.vehicleNumber} – ${issue}`,
+      title: `${vehicle.vehicleNumber} – ${issue}`,
       severity: "warning",
       resolved: false,
     });
 
-    res.json({ message: "Maintenance alert created" });
+    res.json({ message: "Vehicle marked as maintenance" });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Maintenance update failed" });
   }
 };
 
 /* =========================
-   🚨 DELAY UPDATE
+   🚨 DELAY UPDATE (FIXED)
    ========================= */
 exports.markDelay = async (req, res) => {
   try {
@@ -84,7 +77,9 @@ exports.markDelay = async (req, res) => {
       return res.status(404).json({ message: "Vehicle not found" });
     }
 
-    // Create delay alert
+    vehicle.status = "Delayed";
+    await vehicle.save();
+
     await Alert.create({
       type: "Report",
       title: `Delay Alert: ${vehicle.vehicleNumber} – ${delayTime}`,
@@ -92,9 +87,29 @@ exports.markDelay = async (req, res) => {
       resolved: false,
     });
 
-    res.json({ message: "Delay alert created" });
+    res.json({ message: "Vehicle delay updated" });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Delay update failed" });
+  }
+};
+
+/* =========================
+   GENERIC STATUS UPDATE
+   ========================= */
+exports.updateVehicleStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const vehicle = await Vehicle.findById(req.params.id);
+
+    if (!vehicle) {
+      return res.status(404).json({ message: "Vehicle not found" });
+    }
+
+    vehicle.status = status;
+    await vehicle.save();
+
+    res.json(vehicle);
+  } catch (err) {
+    res.status(500).json({ message: "Status update failed" });
   }
 };

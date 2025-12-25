@@ -7,5 +7,6 @@ router.post("/", controller.addVehicle);
 
 router.patch("/:id/maintenance", controller.markMaintenance);
 router.patch("/:id/delay", controller.markDelay);
+router.put("/:id/status", controller.updateVehicleStatus);
 
 module.exports = router;
